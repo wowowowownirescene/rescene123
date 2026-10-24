@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>멍 때리기 연구소 : 불멍·물멍·풀멍 힐링 방치형 RPG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Noto Sans KR', 'sans-serif'],
+            serif: ['Gowun Dodum', 'serif'],
+          },
+          colors: {
+            night: {
+              950: '#07090e',
+              900: '#0d111a',
+              800: '#151c2c',
+              700: '#1f2940',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #07090e;
+      color: #e2e8f0;
+      font-family: 'Noto Sans KR', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    .healing-font {
+      font-family: 'Gowun Dodum', serif;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.5);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.8);
+    }
+
+    /* Floating Drop Toast Animation */
+    @keyframes floatUpFade {
+      0% {
+        opacity: 0;
+        transform: translateY(15px) scale(0.9);
+      }
+      15% {
+        opacity: 1;
+        transform: translateY(0px) scale(1);
+      }
+      80% {
+        opacity: 1;
+        transform: translateY(-25px) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.95);
+      }
+    }
+    .animate-float-up {
+      animation: floatUpFade 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Soft Pulse for Immersion */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    .animate-breathe {
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    /* Glassmorphism Card */
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#07090f] via-[#0c1220] to-[#090d16] text-slate-100">
+
+  <!-- ================= HEADER ================= -->
+  <header class="sticky top-0 z-30 glass-panel border-b border-white/10 px-4 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div id="brand-icon" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/30 to-orange-600/30 border border-amber-400/40 flex items-center justify-center text-xl shadow-lg shadow-amber-500/10 transition-all duration-500">
+          🔥
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg md:text-xl font-bold tracking-tight healing-font text-white">멍 때리기 연구소</h1>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">힐링 방치형 RPG</span>
+          </div>
+          <p id="header-subtitle" class="text-xs text-slate-400 hidden sm:block">아무것도 하지 않을수록 더 깊어지는 자연의 선물</p>
+        </div>
+      </div>
+
+      <!-- Player Level, EXP & Gold Status -->
+      <div class="flex flex-wrap items-center gap-3 md:gap-5 bg-slate-900/80 border border-white/10 px-3.5 py-1.5 rounded-2xl">
+        <!-- Level & EXP -->
+        <div class="flex items-center gap-2.5">
+          <div class="bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 px-2.5 py-1 rounded-xl text-xs font-bold">
+            Lv.<span id="ui-level" class="text-sm text-white ml-0.5">1</span>
+          </div>
+          <div class="w-28 sm:w-36">
+            <div class="flex justify-between text-[11px] text-slate-300 mb-0.5">
+              <span>경험치</span>
+              <span id="ui-exp-text">0 / 100</span>
+            </div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div id="ui-exp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-6 w-[1px] bg-white/10 hidden sm:block"></div>
+
+        <!-- Gold -->
+        <div class="flex items-center gap-1.5 text-amber-300 font-semibold text-sm">
+          <i class="fa-solid fa-coins text-amber-400"></i>
+          <span id="ui-gold">0</span>
+          <span class="text-xs text-slate-400 font-normal">G</span>
+        </div>
+      </div>
+
+      <!-- Right Controls: ASMR Audio, Full Immersion Mode, Test Support -->
+      <div class="flex items-center gap-2">
+        <!-- ASMR Sound Button -->
+        <button id="btn-audio-toggle" onclick="toggleAudio()" class="no-immersion-reset flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-white/10 text-xs font-medium text-slate-200 transition shadow-sm" title="백색소음 ASMR 켜기/끄기">
+          <i id="icon-audio" class="fa-solid fa-volume-xmark text-slate-400"></i>
+          <span id="text-audio" class="hidden md:inline">ASMR 끄기</span>
+        </button>
+
+        <!-- Test Support Dropdown Toggle -->
+        <div class="relative">
+          <button onclick="toggleCheatMenu()" class="no-immersion-reset flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-400/40 text-xs font-semibold text-violet-200 transition shadow-sm">
+            <i class="fa-solid fa-wand-magic-sparkles text-violet-300"></i>
+            <span>테스트 지원</span>
+          </button>
+
+          <!-- Test Support Popover -->
+          <div id="cheat-menu" class="hidden absolute right-0 mt-2 w-64 glass-panel rounded-2xl p-3.5 shadow-2xl border border-violet-400/30 z-50">
+            <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-white/10">
+              <span class="text-xs font-bold text-violet-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-flask"></i> 개발자/체험용 빠른 지원
+              </span>
+              <button onclick="toggleCheatMenu()" class="no-immersion-reset text-slate-400 hover:text-white text-xs">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div class="grid grid-cols-1 gap-2 text-xs">
+              <button onclick="cheatAddLevel(5)" class="no-immersion-reset w-full py-2 px-3 rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/30 text-left flex justify-between items-center transition">
+                <span>⚡ 플레이어 레벨 +5</span>
+                <span class="text-[11px] text-indigo-200">즉시 상승</span>
+              </button>
+              <button onclick="cheatAddGold(10000)" class="no-immersion-reset w-full py-2 px-3 rounded-xl bg-amber-600/30 hover:bg-amber-600/50 border border-amber-400/30 text-left flex justify-between items-center transition">
+                <span>💰 골드 +10,000 G</span>
+                <span class="text-[11px] text-amber-200">즉시 지급</span>
+              </button>
+              <button onclick="cheatAddAllMaterials(5)" class="no-immersion-reset w-full py-2 px-3 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/30 text-left flex justify-between items-center transition">
+                <span>🎒 모든 속성 재료 +5개씩</span>
+                <span class="text-[11px] text-emerald-200">15종 전체</span>
+              </button>
+              <button onclick="cheatMaxImmersion()" class="no-immersion-reset w-full py-2 px-3 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/30 text-left flex justify-between items-center transition">
+                <span>🧘 멍 때리기 몰입도 100%</span>
+                <span class="text-[11px] text-cyan-200">즉시 최대치</span>
+              </button>
+              <button onclick="cheatResetCooldowns()" class="no-immersion-reset w-full py-2 px-3 rounded-xl bg-rose-600/30 hover:bg-rose-600/50 border border-rose-400/30 text-left flex justify-between items-center transition">
+                <span>🔄 액티브 스킬 쿨타임 초기화</span>
+                <span class="text-[11px] text-rose-200">즉시 사용</span>
+              </button>
+              <div class="pt-1 border-t border-white/10 mt-1">
+                <button onclick="resetSaveData()" class="no-immersion-reset w-full py-1.5 px-3 rounded-xl bg-red-950/60 hover:bg-red-900/70 border border-red-500/30 text-red-300 text-center transition">
+                  🗑️ 저장 데이터 초기화
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+    <!-- LEFT / CENTER COLUMN: FIELD SELECTION, CANVAS & IMMERSION (7 Cols on LG) -->
+    <section class="lg:col-span-7 flex flex-col gap-4">
+
+      <!-- 1. Top Field Switcher Tabs (불멍 / 물멍 / 풀멍) -->
+      <div class="grid grid-cols-3 gap-2.5 p-1.5 rounded-2xl glass-panel">
+        <button id="tab-field-fire" onclick="selectField('fire')" class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300">
+          <span class="text-lg md:text-xl">🔥</span>
+          <span>불멍</span>
+          <span id="badge-stage-fire" class="text-[11px] px-2 py-0.5 rounded-full bg-black/30 font-normal hidden sm:inline">1단계</span>
+        </button>
+        <button id="tab-field-water" onclick="selectField('water')" class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300">
+          <span class="text-lg md:text-xl">💧</span>
+          <span>물멍</span>
+          <span id="badge-stage-water" class="text-[11px] px-2 py-0.5 rounded-full bg-black/30 font-normal hidden sm:inline">1단계</span>
+        </button>
+        <button id="tab-field-grass" onclick="selectField('grass')" class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300">
+          <span class="text-lg md:text-xl">🌿</span>
+          <span>풀멍</span>
+          <span id="badge-stage-grass" class="text-[11px] px-2 py-0.5 rounded-full bg-black/30 font-normal hidden sm:inline">1단계</span>
+        </button>
+      </div>
+
+      <!-- 2. Main Visual Canvas Container -->
+      <div id="canvas-wrapper" class="relative w-full h-[360px] sm:h-[430px] rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-slate-950 group">
+        <!-- Interactive HTML5 Canvas -->
+        <canvas id="healing-canvas" class="w-full h-full block cursor-pointer" onclick="handleCanvasInteract(event)"></canvas>
+
+        <!-- Top Overlay: Current Stage Info & Stats Multipliers -->
+        <div class="absolute top-4 left-4 right-4 flex flex-wrap items-start justify-between gap-2 pointer-events-none">
+          <div class="bg-black/55 backdrop-blur-md border border-white/15 px-3.5 py-2 rounded-2xl">
+            <div class="flex items-center gap-2">
+              <span id="canvas-stage-badge" class="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-500/30 text-amber-300 border border-amber-400/30">STAGE 1</span>
+              <h2 id="canvas-stage-title" class="text-base sm:text-lg font-bold text-white healing-font">타닥타닥 작은 장작불</h2>
+            </div>
+            <p id="canvas-stage-desc" class="text-xs text-slate-300 mt-0.5">작은 불씨와 연기가 피어오르는 소박한 모닥불입니다.</p>
+          </div>
+
+          <!-- Active Buffs & Multiplier Summary Pill -->
+          <div class="flex flex-col items-end gap-1.5">
+            <div class="bg-black/55 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-xl text-xs flex items-center gap-3">
+              <span title="경험치 배율" class="text-indigo-300"><i class="fa-solid fa-star mr-1"></i>EXP <b id="stat-exp-mult">x1.00</b></span>
+              <span title="골드 배율" class="text-amber-300"><i class="fa-solid fa-coins mr-1"></i>Gold <b id="stat-gold-mult">x1.00</b></span>
+              <span title="아이템 획득 확률" class="text-emerald-300"><i class="fa-solid fa-clover mr-1"></i>드롭 <b id="stat-drop-rate">25.0%</b></span>
+            </div>
+            <!-- Active Skill Buff Indicator -->
+            <div id="active-buff-pill" class="hidden bg-gradient-to-r from-amber-500/80 to-rose-500/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+              🔥 자연의 교감 발동 중! (드롭률 2배 · <span id="buff-remain-sec">20</span>초)
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Reward Container (EXP/Gold/Item Drops appear here) -->
+        <div id="floating-rewards" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+        <!-- Bottom Overlay Inside Canvas: Idle Tick Progress & Immersion Bar -->
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 pt-10 flex flex-col gap-2.5">
+          
+          <!-- Immersion (멍 때리기 몰입도) Gauge -->
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span class="font-semibold text-cyan-200 healing-font">멍 때리기 몰입도</span>
+                <span id="immersion-status-text" class="text-[11px] text-slate-300">(가만히 바라볼수록 보상이 증가합니다)</span>
+              </div>
+              <div class="font-bold text-cyan-300">
+                +<span id="ui-immersion-bonus">0</span>% 보너스
+                <span class="text-[11px] text-slate-400 font-normal ml-1">(<span id="ui-immersion-sec">0</span>초)</span>
+              </div>
+            </div>
+            <div class="w-full h-2 bg-slate-800/90 rounded-full overflow-hidden border border-white/10">
+              <div id="ui-immersion-bar" class="h-full bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Periodic Reward Tick Progress Bar -->
+          <div class="flex items-center gap-3">
+            <div class="text-[11px] text-slate-300 whitespace-nowrap flex items-center gap-1">
+              <i class="fa-regular fa-clock text-slate-400"></i>
+              <span>다음 호흡 보상 (<span id="ui-tick-interval">2.0</span>초)</span>
+            </div>
+            <div class="flex-1 h-1.5 bg-slate-800/90 rounded-full overflow-hidden">
+              <div id="ui-tick-bar" class="h-full bg-white/80 transition-all duration-100" style="width: 0%"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3. Stage Selector Bar (1단계 ~ 5단계) -->
+      <div class="glass-panel rounded-2xl p-3.5">
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-indigo-400"></i>
+            <span id="stage-selector-title">불멍 스테이지 선택 (레벨별 해금)</span>
+          </h3>
+          <span class="text-[11px] text-slate-400">상위 스테이지일수록 경험치·골드·희귀 재료 확률이 대폭 상승합니다</span>
+        </div>
+        <div id="stage-buttons-container" class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </div>
+
+      <!-- 4. Recent Healing Activity Log -->
+      <div class="glass-panel rounded-2xl p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-feather-pointed text-emerald-400"></i>
+            <span>자연의 기록 (최근 획득 로그)</span>
+          </h3>
+          <button onclick="clearLogs()" class="no-immersion-reset text-[11px] text-slate-400 hover:text-slate-200">비우기</button>
+        </div>
+        <div id="activity-log" class="h-24 overflow-y-auto space-y-1 text-xs text-slate-300 pr-1 font-light">
+          <div class="text-slate-400 italic">장작불을 가만히 바라보며 마음의 휴식을 시작합니다...</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: INVENTORY, ARTIFACT WORKSHOP, SKILLS (5 Cols on LG) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+
+      <!-- Sub-navigation Tabs for Right Panel -->
+      <div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl glass-panel">
+        <button id="subtab-inventory" onclick="switchRightTab('inventory')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 bg-white/15 text-white shadow">
+          <i class="fa-solid fa-seedling text-emerald-400"></i>
+          <span>채집 가방</span>
+        </button>
+        <button id="subtab-craft" onclick="switchRightTab('craft')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-hammer text-amber-400"></i>
+          <span>아티팩트 공방</span>
+          <span id="craft-craftable-badge" class="hidden w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        </button>
+        <button id="subtab-skills" onclick="switchRightTab('skills')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-spa text-cyan-400"></i>
+          <span>명상 스킬</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: INVENTORY (속성별 드롭 아이템 & 재료 연성) -->
+      <div id="panel-inventory" class="glass-panel rounded-3xl p-4 flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <div>
+            <h3 class="text-base font-bold text-white healing-font">자연이 선물한 재료 가방</h3>
+            <p class="text-xs text-slate-400">불멍·물멍·풀멍 중 우연히 발견한 속성별 결정체입니다.</p>
+          </div>
+          <button onclick="transmuteAllPossible()" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-xs font-medium transition" title="하위 재료 5개를 상위 재료 1개로 연성합니다">
+            <i class="fa-solid fa-rotate mr-1"></i>재료 상위 연성 (5:1)
+          </button>
+        </div>
+
+        <!-- Drop Probability Info by Tier -->
+        <div class="bg-slate-900/70 rounded-2xl p-2.5 border border-white/5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <span class="text-slate-400">현재 스테이지 티어별 비중:</span>
+          <div id="ui-tier-probs" class="flex flex-wrap gap-2 font-medium">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 3 Attributes Material Lists -->
+        <div id="inventory-lists-container" class="space-y-4 max-h-[520px] overflow-y-auto pr-1">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- TAB 2: ARTIFACT CRAFTING WORKSHOP (레벨별 아이템 조합 시스템) -->
+      <div id="panel-craft" class="hidden glass-panel rounded-3xl p-4 flex flex-col gap-4">
+        <div class="border-b border-white/10 pb-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-white healing-font">자연의 공방 (힐링 아티팩트 조합)</h3>
+            <span id="ui-artifact-count" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-semibold">0 / 6 제작됨</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">불·물·풀의 재료를 조화롭게 조합하여 영구적인 권능을 얻으세요.</p>
+        </div>
+
+        <div id="craft-list-container" class="space-y-3 max-h-[540px] overflow-y-auto pr-1">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- TAB 3: MEDITATION SKILLS (레벨별 패시브 & 액티브 스킬) -->
+      <div id="panel-skills" class="hidden glass-panel rounded-3xl p-4 flex flex-col gap-4">
+        <div class="border-b border-white/10 pb-3">
+          <h3 class="text-base font-bold text-white healing-font">명상과 교감 스킬 트리</h3>
+          <p class="text-xs text-slate-400 mt-0.5">레벨을 올리고 골드를 사용하여 더 깊은 몰입과 자연의 축복을 깨우세요.</p>
+        </div>
+
+        <div id="skills-list-container" class="space-y-3 max-h-[540px] overflow-y-auto pr-1">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-white/5 py-3 px-6 text-center text-xs text-slate-500 flex flex-wrap items-center justify-between max-w-7xl w-full mx-auto gap-2">
+    <div>💡 팁: 캔버스 화면을 클릭하면 잔잔한 파문이나 불티가 일렁이며, 가만히 두면 <b>멍 때리기 몰입도</b>가 최대치까지 차오릅니다.</div>
+    <div class="flex items-center gap-3">
+      <span id="save-indicator" class="text-slate-400"><i class="fa-solid fa-cloud-arrow-up mr-1 text-emerald-400"></i>자동 저장됨</span>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT GAME ENGINE ================= -->
+  <script>
+    /*************************************************************************
+     * 1. GAME DATA DEFINITIONS (필드, 스테이지, 아이템, 레시피, 스킬)
+     *************************************************************************/
+    const FIELDS = {
+      fire: {
+        id: 'fire',
+        name: '불멍',
+        icon: '🔥',
+        themeColor: 'amber',
+        activeActionName: '장작 지피기',
+        activeActionIcon: 'fa-fire-flame-curved',
+        stages: [
+          { stage: 1, reqLv: 1,  name: '타닥타닥 작은 장작불', desc: '작은 불씨와 연기가 피어오르는 소박한 장작불입니다.', baseExp: 12, baseGold: 15, dropBonus: 0, tierWeights: [75, 20, 5, 0, 0] },
+          { stage: 2, reqLv: 5,  name: '아늑한 캠프파이어',   desc: '제법 커진 불꽃과 따뜻한 불티가 밤하늘로 춤추듯 올라갑니다.', baseExp: 28, baseGold: 38, dropBonus: 4, tierWeights: [50, 35, 12, 3, 0] },
+          { stage: 3, reqLv: 10, name: '거대한 성화 화로',     desc: '석조 화로 위에서 강렬하게 타오르는 신성한 큰 불길입니다.', baseExp: 65, baseGold: 90, dropBonus: 8, tierWeights: [30, 38, 22, 8, 2] },
+          { stage: 4, reqLv: 18, name: '용암이 끓는 화구',     desc: '대지의 심장부에서 붉은 용암과 거대한 화염 기둥이 솟구칩니다.', baseExp: 150, baseGold: 220, dropBonus: 14, tierWeights: [15, 30, 32, 17, 6] },
+          { stage: 5, reqLv: 25, name: '태양의 불꽃 제단',     desc: '황금빛 거대 화염과 신비로운 태양의 오라가 공간을 가득 채웁니다.', baseExp: 360, baseGold: 550, dropBonus: 22, tierWeights: [5, 20, 35, 25, 15] }
+        ],
+        items: [
+          { id: 'fire_1', tier: 1, tierName: '일반', name: '따뜻한 재',       icon: '⚱️', color: 'text-slate-300',   bg: 'bg-slate-700/40',   border: 'border-slate-500/40' },
+          { id: 'fire_2', tier: 2, tierName: '고급', name: '일렁이는 불씨',   icon: '✨', color: 'text-emerald-300', bg: 'bg-emerald-900/30', border: 'border-emerald-500/40' },
+          { id: 'fire_3', tier: 3, tierName: '희귀', name: '붉은 참나무 숯', icon: '🪵', color: 'text-sky-300',     bg: 'bg-sky-900/30',     border: 'border-sky-500/40' },
+          { id: 'fire_4', tier: 4, tierName: '영웅', name: '순수한 불꽃 결정', icon: '❤️‍🔥', color: 'text-purple-300',  bg: 'bg-purple-900/30',  border: 'border-purple-500/40' },
+          { id: 'fire_5', tier: 5, tierName: '전설', name: '태양의 심장석',   icon: '☀️', color: 'text-amber-300',   bg: 'bg-amber-900/40',   border: 'border-amber-400/60' }
+        ]
+      },
+      water: {
+        id: 'water',
+        name: '물멍',
+        icon: '💧',
+        themeColor: 'cyan',
+        activeActionName: '물결 느끼기',
+        activeActionIcon: 'fa-water',
+        stages: [
+          { stage: 1, reqLv: 1,  name: '비 오는 작은 물웅덩이', desc: '추적추적 떨어지는 빗방울이 작은 물웅덩이에 동그란 파문을 그립니다.', baseExp: 12, baseGold: 15, dropBonus: 0, tierWeights: [75, 20, 5, 0, 0] },
+          { stage: 2, reqLv: 5,  name: '고요한 앞마당 연못',   desc: '잔잔한 물결 위로 초록 수련잎과 연꽃이 평화롭게 떠 있습니다.', baseExp: 28, baseGold: 38, dropBonus: 4, tierWeights: [50, 35, 12, 3, 0] },
+          { stage: 3, reqLv: 10, name: '맑고 잔잔한 호수',     desc: '넓은 수면 위로 별빛과 달빛이 부서지며 아름다운 윤슬을 만듭니다.', baseExp: 65, baseGold: 90, dropBonus: 8, tierWeights: [30, 38, 22, 8, 2] },
+          { stage: 4, reqLv: 18, name: '안개 낀 대하(큰 강)',  desc: '유유히 흐르는 깊은 강물 위로 몽환적인 새벽 물안개가 피어오릅니다.', baseExp: 150, baseGold: 220, dropBonus: 14, tierWeights: [15, 30, 32, 17, 6] },
+          { stage: 5, reqLv: 25, name: '끝없는 푸른 대양',     desc: '거대한 파도와 아득한 수평선, 심해의 신비로운 빛깔이 숨을 멎게 합니다.', baseExp: 360, baseGold: 550, dropBonus: 22, tierWeights: [5, 20, 35, 25, 15] }
+        ],
+        items: [
+          { id: 'water_1', tier: 1, tierName: '일반', name: '맑은 빗방울',     icon: '💧', color: 'text-slate-300',   bg: 'bg-slate-700/40',   border: 'border-slate-500/40' },
+          { id: 'water_2', tier: 2, tierName: '고급', name: '이슬 맺힌 조약돌', icon: '🪨', color: 'text-emerald-300', bg: 'bg-emerald-900/30', border: 'border-emerald-500/40' },
+          { id: 'water_3', tier: 3, tierName: '희귀', name: '호수의 윤슬 조각', icon: '💎', color: 'text-sky-300',     bg: 'bg-sky-900/30',     border: 'border-sky-500/40' },
+          { id: 'water_4', tier: 4, tierName: '영웅', name: '심해의 푸른 진주', icon: '🫧', color: 'text-purple-300',  bg: 'bg-purple-900/30',  border: 'border-purple-500/40' },
+          { id: 'water_5', tier: 5, tierName: '전설', name: '대양의 눈물',     icon: '🌊', color: 'text-amber-300',   bg: 'bg-amber-900/40',   border: 'border-amber-400/60' }
+        ]
+      },
+      grass: {
+        id: 'grass',
+        name: '풀멍',
+        icon: '🌿',
+        themeColor: 'emerald',
+        activeActionName: '바람 맞기',
+        activeActionIcon: 'fa-wind',
+        stages: [
+          { stage: 1, reqLv: 1,  name: '집 앞 작은 화분',     desc: '작은 토분 속에서 여린 새싹이 봄바람에 살랑살랑 흔들립니다.', baseExp: 12, baseGold: 15, dropBonus: 0, tierWeights: [75, 20, 5, 0, 0] },
+          { stage: 2, reqLv: 5,  name: '따스한 앞마당 정원',   desc: '푹신한 잔디밭과 들꽃 사이로 나비와 반딧불이가 노닙니다.', baseExp: 28, baseGold: 38, dropBonus: 4, tierWeights: [50, 35, 12, 3, 0] },
+          { stage: 3, reqLv: 10, name: '바람 부는 갈대밭',     desc: '스치는 바람을 따라 황금빛 갈대 군락이 파도처럼 물결칩니다.', baseExp: 65, baseGold: 90, dropBonus: 8, tierWeights: [30, 38, 22, 8, 2] },
+          { stage: 4, reqLv: 18, name: '끝없는 푸른 초원',     desc: '지평선까지 펼쳐진 드넓은 초원 위로 구름 그림자가 유유히 흘러갑니다.', baseExp: 150, baseGold: 220, dropBonus: 14, tierWeights: [15, 30, 32, 17, 6] },
+          { stage: 5, reqLv: 25, name: '태고의 거대한 영산',   desc: '장엄한 산맥과 신비로운 세계수 숲에서 영롱한 생명력이 뿜어져 나옵니다.', baseExp: 360, baseGold: 550, dropBonus: 22, tierWeights: [5, 20, 35, 25, 15] }
+        ],
+        items: [
+          { id: 'grass_1', tier: 1, tierName: '일반', name: '여린 새싹 잎',     icon: '🌱', color: 'text-slate-300',   bg: 'bg-slate-700/40',   border: 'border-slate-500/40' },
+          { id: 'grass_2', tier: 2, tierName: '고급', name: '마당의 네잎클로버', icon: '🍀', color: 'text-emerald-300', bg: 'bg-emerald-900/30', border: 'border-emerald-500/40' },
+          { id: 'grass_3', tier: 3, tierName: '희귀', name: '바람 품은 갈대',   icon: '🌾', color: 'text-sky-300',     bg: 'bg-sky-900/30',     border: 'border-sky-500/40' },
+          { id: 'grass_4', tier: 4, tierName: '영웅', name: '대초원의 천년초',   icon: '🌺', color: 'text-purple-300',  bg: 'bg-purple-900/30',  border: 'border-purple-500/40' },
+          { id: 'grass_5', tier: 5, tierName: '전설', name: '세계수의 나뭇가지', icon: '🌳', color: 'text-amber-300',   bg: 'bg-amber-900/40',   border: 'border-amber-400/60' }
+        ]
+      }
+    };
+
+    // Quick lookup map for all 15 items
+    const ITEM_MAP = {};
+    Object.values(FIELDS).forEach(f => {
+      f.items.forEach(item => {
+        ITEM_MAP[item.id] = { ...item, fieldId: f.id, fieldName: f.name };
+      });
+    });
+
+    // Artifact Crafting Recipes (6 Recipes unlocked by level)
+    const ARTIFACT_RECIPES = [
+      {
+        id: 'art_1',
+        reqLv: 1,
+        name: '온기 품은 새싹 화분',
+        icon: '🪴',
+        effectDesc: '모든 골드 획득량 +30% 증가',
+        lore: '따뜻한 재와 맑은 빗방울을 머금어 사계절 내내 시들지 않는 작은 화분입니다.',
+        ingredients: { fire_1: 2, water_1: 2, grass_1: 2 }
+      },
+      {
+        id: 'art_2',
+        reqLv: 4,
+        name: '아지랑이 조약돌 등불',
+        icon: '🏮',
+        effectDesc: '모든 경험치 획득량 +35% 증가',
+        lore: '이슬 맺힌 조약돌 속에 꺼지지 않는 작은 불씨를 담아 마음을 밝혀줍니다.',
+        ingredients: { fire_2: 2, water_2: 2 }
+      },
+      {
+        id: 'art_3',
+        reqLv: 8,
+        name: '행운의 모닥불 부적',
+        icon: '🧿',
+        effectDesc: '아이템 기본 드롭 확률 +10%p 증가',
+        lore: '참나무 숯에 네잎클로버와 빗방울의 축복을 새겨 자연의 선물을 끌어당깁니다.',
+        ingredients: { fire_3: 1, grass_2: 2, water_1: 3 }
+      },
+      {
+        id: 'art_4',
+        reqLv: 12,
+        name: '윤슬이 비치는 갈대 피리',
+        icon: '🪈',
+        effectDesc: '방치 보상 획득 주기 20% 단축 (더 빠른 호흡)',
+        lore: '호수의 반짝이는 윤슬 조각으로 장식한 갈대 피리로, 시간의 흐름을 경쾌하게 합니다.',
+        ingredients: { water_3: 2, grass_3: 2 }
+      },
+      {
+        id: 'art_5',
+        reqLv: 18,
+        name: '자연의 조화 정수',
+        icon: '🔮',
+        effectDesc: '모든 경험치·골드 보상 +100% 및 희귀 이상 재료 발견 확률 2배',
+        lore: '불꽃 결정, 심해 진주, 천년초가 하나로 공명하며 대자연의 기운을 증폭시킵니다.',
+        ingredients: { fire_4: 1, water_4: 1, grass_4: 1 }
+      },
+      {
+        id: 'art_6',
+        reqLv: 25,
+        name: '태초의 안식처 성배',
+        icon: '🏆',
+        effectDesc: '최종 전설 효과: 모든 수익 3배 & 화면 내 신비로운 태초의 오라 발현',
+        lore: '태양의 심장석, 대양의 눈물, 세계수의 가지로 빚어낸 궁극의 힐링 성물입니다.',
+        ingredients: { fire_5: 1, water_5: 1, grass_5: 1 }
+      }
+    ];
+
+    // Skills Definition (Passive & Active)
+    const SKILLS_DATA = [
+      {
+        id: 'skill_breath',
+        type: 'passive',
+        reqLv: 1,
+        name: '깊은 호흡',
+        icon: '🌬️',
+        maxLv: 10,
+        baseCost: 50,
+        costMult: 1.7,
+        getDesc: (lv) => `기본 경험치 획득량이 +${lv * 25}% 증가합니다. (다음 레벨: +${(lv + 1) * 25}%)`
+      },
+      {
+        id: 'skill_commune',
+        type: 'active',
+        reqLv: 3,
+        name: '자연의 교감', // Dynamic per field in UI
+        icon: '✨',
+        maxLv: 5,
+        baseCost: 120,
+        costMult: 2.0,
+        cooldown: 45,
+        duration: 20,
+        getDesc: (lv) => `사용 시 20초간 아이템 드롭률 2배 & 즉시 현재 스테이지 기본 경험치의 ${(lv || 1) * 8}배를 획득합니다. (쿨타임 45초)`
+      },
+      {
+        id: 'skill_mindfulness',
+        type: 'passive',
+        reqLv: 6,
+        name: '무념무상',
+        icon: '🧘',
+        maxLv: 10,
+        baseCost: 200,
+        costMult: 1.8,
+        getDesc: (lv) => `멍 때리기 몰입도 상승 속도가 +${lv * 20}% 빨라지고, 최대 몰입 보너스가 +${100 + lv * 20}%까지 확장됩니다.`
+      },
+      {
+        id: 'skill_blessing',
+        type: 'passive',
+        reqLv: 10,
+        name: '자연의 축복',
+        icon: '🍀',
+        maxLv: 10,
+        baseCost: 450,
+        costMult: 1.85,
+        getDesc: (lv) => `기본 골드 획득량이 +${lv * 30}% 증가하고 상위 티어 아이템 발견 가중치가 상승합니다.`
+      },
+      {
+        id: 'skill_inspiration',
+        type: 'active',
+        reqLv: 15,
+        name: '영감의 순간',
+        icon: '🌟',
+        maxLv: 5,
+        baseCost: 900,
+        costMult: 2.2,
+        cooldown: 60,
+        getDesc: (lv) => `즉시 현재 필드의 아이템 ${lv >= 3 ? '2~3개' : '1~2개'}를 확정 획득하고 보너스 골드를 얻습니다. (쿨타임 60초)`
+      }
+    ];
+
+    /*************************************************************************
+     * 2. PLAYER STATE & STORAGE MANAGEMENT
+     *************************************************************************/
+    const DEFAULT_STATE = {
+      level: 1,
+      exp: 0,
+      gold: 0,
+      currentField: 'fire',
+      selectedStages: { fire: 1, water: 1, grass: 1 },
+      inventory: {
+        fire_1: 0, fire_2: 0, fire_3: 0, fire_4: 0, fire_5: 0,
+        water_1: 0, water_2: 0, water_3: 0, water_4: 0, water_5: 0,
+        grass_1: 0, grass_2: 0, grass_3: 0, grass_4: 0, grass_5: 0
+      },
+      artifacts: {
+        art_1: false, art_2: false, art_3: false, art_4: false, art_5: false, art_6: false
+      },
+      skills: {
+        skill_breath: 0,
+        skill_commune: 0,
+        skill_mindfulness: 0,
+        skill_blessing: 0,
+        skill_inspiration: 0
+      },
+      cooldowns: {
+        skill_commune: 0,
+        skill_inspiration: 0
+      },
+      activeBuffs: {
+        communeRemain: 0
+      },
+      immersionSeconds: 0
+    };
+
+    let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    let currentRightTab = 'inventory';
+    let tickProgressMs = 0;
+
+    function getReqExp(lv) {
+      return Math.floor(80 * Math.pow(lv, 1.45));
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem('healing_idle_rpg_save_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = {
+            ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
+            ...parsed,
+            selectedStages: { ...DEFAULT_STATE.selectedStages, ...(parsed.selectedStages || {}) },
+            inventory: { ...DEFAULT_STATE.inventory, ...(parsed.inventory || {}) },
+            artifacts: { ...DEFAULT_STATE.artifacts, ...(parsed.artifacts || {}) },
+            skills: { ...DEFAULT_STATE.skills, ...(parsed.skills || {}) },
+            cooldowns: { ...DEFAULT_STATE.cooldowns, ...(parsed.cooldowns || {}) },
+            activeBuffs: { ...DEFAULT_STATE.activeBuffs, ...(parsed.activeBuffs || {}) }
+          };
+        }
+      } catch (e) {
+        console.warn('저장 데이터를 불러오는 중 오류 발생:', e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('healing_idle_rpg_save_v1', JSON.stringify(state));
+        const el = document.getElementById('save-indicator');
+        if (el) {
+          el.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-400"></i>방금 자동 저장됨';
+        }
+      } catch (e) {
+        console.warn('저장 실패:', e);
+      }
+    }
+
+    function resetSaveData() {
+      localStorage.removeItem('healing_idle_rpg_save_v1');
+      state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      tickProgressMs = 0;
+      addLog('🌱 모든 저장 데이터가 초기화되었습니다. 새로운 마음으로 시작해보세요.');
+      toggleCheatMenu();
+      updateAllUI();
+    }
+
+    /*************************************************************************
+     * 3. GAME FORMULAS & MULTIPLIERS
+     *************************************************************************/
+    function getMaxImmersionBonusPct() {
+      const lv = state.skills.skill_mindfulness || 0;
+      return 100 + lv * 20; // Default 100%, up to +300%
+    }
+
+    function getImmersionBonusPct() {
+      const maxBonus = getMaxImmersionBonusPct();
+      // Base 60 seconds to reach 100%. With mindfulness skill, grows faster
+      const ratio = Math.min(1, state.immersionSeconds / 60);
+      return Math.round(ratio * maxBonus);
+    }
+
+    function getTickIntervalMs() {
+      let base = 2000;
+      if (state.artifacts.art_4) base *= 0.8; // -20%
+      return Math.max(800, Math.round(base));
+    }
+
+    function getExpMultiplier() {
+      let mult = 1.0;
+      // Passive: 깊은 호흡
+      mult += (state.skills.skill_breath || 0) * 0.25;
+      // Immersion bonus
+      mult *= (1 + getImmersionBonusPct() / 100);
+      // Artifacts
+      if (state.artifacts.art_2) mult *= 1.35;
+      if (state.artifacts.art_5) mult *= 2.0;
+      if (state.artifacts.art_6) mult *= 3.0;
+      return mult;
+    }
+
+    function getGoldMultiplier() {
+      let mult = 1.0;
+      // Passive: 자연의 축복
+      mult += (state.skills.skill_blessing || 0) * 0.30;
+      // Immersion bonus
+      mult *= (1 + getImmersionBonusPct() / 100);
+      // Artifacts
+      if (state.artifacts.art_1) mult *= 1.30;
+      if (state.artifacts.art_5) mult *= 2.0;
+      if (state.artifacts.art_6) mult *= 3.0;
+      return mult;
+    }
+
+    function getDropChancePct() {
+      const fieldObj = FIELDS[state.currentField];
+      const stageIdx = (state.selectedStages[state.currentField] || 1) - 1;
+      const stageData = fieldObj.stages[stageIdx];
+
+      let chance = 24 + stageData.dropBonus; // Base 24% ~ 46%
+      if (state.artifacts.art_3) chance += 10; // +10%p
+      // Immersion increases drop chance up to +25% relative
+      chance *= (1 + (getImmersionBonusPct() / 100) * 0.35);
+      // Active skill buff: 2x drop rate
+      if (state.activeBuffs.communeRemain > 0) chance *= 2.0;
+      return Math.min(95, chance);
+    }
+
+    function getAdjustedTierWeights(fieldId) {
+      const fieldObj = FIELDS[fieldId];
+      const stageIdx = (state.selectedStages[fieldId] || 1) - 1;
+      const baseWeights = [...fieldObj.stages[stageIdx].tierWeights];
+
+      const blessingLv = state.skills.skill_blessing || 0;
+      const harmonyMult = state.artifacts.art_5 ? 2.0 : 1.0;
+      const grailMult = state.artifacts.art_6 ? 1.5 : 1.0;
+
+      // Boost rare/epic/legendary weights based on skills & artifacts
+      baseWeights[2] = baseWeights[2] * (1 + blessingLv * 0.08) * harmonyMult;
+      baseWeights[3] = baseWeights[3] * (1 + blessingLv * 0.12) * harmonyMult * grailMult;
+      baseWeights[4] = baseWeights[4] * (1 + blessingLv * 0.15) * harmonyMult * grailMult;
+
+      return baseWeights;
+    }
+
+    function rollFieldItem(fieldId) {
+      const weights = getAdjustedTierWeights(fieldId);
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = Math.random() * total;
+      let chosenTierIdx = 0;
+      for (let i = 0; i < weights.length; i++) {
+        if (r < weights[i]) {
+          chosenTierIdx = i;
+          break;
+        }
+        r -= weights[i];
+      }
+      return FIELDS[fieldId].items[chosenTierIdx];
+    }
+
+    /*************************************************************************
+     * 4. CORE GAMEPLAY LOOP & REWARD TICKS
+     *************************************************************************/
+    function gainExp(amount) {
+      state.exp += amount;
+      let leveledUp = false;
+      while (state.exp >= getReqExp(state.level)) {
+        state.exp -= getReqExp(state.level);
+        state.level += 1;
+        leveledUp = true;
+      }
+      if (leveledUp) {
+        spawnFloatingToast(`🎉 레벨 업! Lv.${state.level} 달성!`, 'text-amber-300 font-bold text-base', true);
+        addLog(`✨ <b class="text-amber-300">레벨 업! Lv.${state.level}</b>에 도달했습니다. 새로운 스테이지나 공방 레시피를 확인해보세요!`);
+        playLevelUpChime();
+        renderStageSelector();
+        renderRightPanel();
+      }
+    }
+
+    function triggerIdleRewardTick() {
+      const fieldObj = FIELDS[state.currentField];
+      const stageIdx = (state.selectedStages[state.currentField] || 1) - 1;
+      const stageData = fieldObj.stages[stageIdx];
+
+      const expGain = Math.max(1, Math.round(stageData.baseExp * getExpMultiplier()));
+      const goldGain = Math.max(1, Math.round(stageData.baseGold * getGoldMultiplier()));
+
+      state.gold += goldGain;
+      gainExp(expGain);
+
+      // Subtle floating EXP/Gold indicator
+      spawnFloatingToast(`+${expGain.toLocaleString()} EXP  ·  +${goldGain.toLocaleString()} G`, 'text-slate-200/90 text-xs');
+
+      // Roll for Item Drop
+      const dropChance = getDropChancePct();
+      if (Math.random() * 100 < dropChance) {
+        const droppedItem = rollFieldItem(state.currentField);
+        state.inventory[droppedItem.id] = (state.inventory[droppedItem.id] || 0) + 1;
+
+        spawnFloatingToast(
+          `${droppedItem.icon} [${droppedItem.tierName}] ${droppedItem.name} 획득!`,
+          `${droppedItem.color} font-bold text-sm bg-black/75 px-3 py-1 rounded-full border border-white/15 shadow-lg`,
+          true
+        );
+        addLog(`${droppedItem.icon} <span class="${droppedItem.color} font-medium">[${droppedItem.tierName}] ${droppedItem.name}</span>을(를) 발견했습니다!`);
+        playItemDropChime(droppedItem.tier);
+
+        if (currentRightTab === 'inventory' || currentRightTab === 'craft') {
+          renderRightPanel();
+        }
+      }
+
+      updateHeaderAndStatsUI();
+      checkCraftableBadge();
+    }
+
+    // Main 100ms Interval Timer
+    let lastFrameTime = performance.now();
+    setInterval(() => {
+      const now = performance.now();
+      const dtMs = now - lastFrameTime;
+      lastFrameTime = now;
+      const dtSec = dtMs / 1000;
+
+      // 1. Immersion Growth
+      const mindfulnessLv = state.skills.skill_mindfulness || 0;
+      const immersionSpeed = 1 + mindfulnessLv * 0.20;
+      state.immersionSeconds = Math.min(60, state.immersionSeconds + dtSec * immersionSpeed);
+
+      // 2. Cooldowns & Active Buffs
+      ['skill_commune', 'skill_inspiration'].forEach(skId => {
+        if (state.cooldowns[skId] > 0) {
+          state.cooldowns[skId] = Math.max(0, state.cooldowns[skId] - dtSec);
+        }
+      });
+      if (state.activeBuffs.communeRemain > 0) {
+        state.activeBuffs.communeRemain = Math.max(0, state.activeBuffs.communeRemain - dtSec);
+      }
+
+      // 3. Periodic Reward Progress
+      const intervalMs = getTickIntervalMs();
+      tickProgressMs += dtMs;
+      if (tickProgressMs >= intervalMs) {
+        tickProgressMs -= intervalMs;
+        triggerIdleRewardTick();
+      }
+
+      // Update live bars
+      updateLiveBarsUI(intervalMs);
+    }, 100);
+
+    // Auto-save every 10 seconds
+    setInterval(saveState, 10000);
+
+    // Reset immersion gently when user clicks interactive UI buttons (except cheat/audio/canvas)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn && !btn.classList.contains('no-immersion-reset')) {
+        // Gentle dip or reset to simulate breaking '멍 때리기'
+        state.immersionSeconds = Math.max(0, state.immersionSeconds * 0.35);
+        updateLiveBarsUI(getTickIntervalMs());
+      }
+    });
+
+    /*************************************************************************
+     * 5. UI RENDERING & INTERACTION HANDLERS
+     *************************************************************************/
+    function selectField(fieldId) {
+      if (!FIELDS[fieldId]) return;
+      state.currentField = fieldId;
+      updateFieldTabsUI();
+      renderStageSelector();
+      updateCanvasStageHeader();
+      if (currentRightTab === 'skills') renderRightPanel();
+      updateAudioSoundscape();
+      initCanvasEntities();
+      saveState();
+    }
+
+    function selectStage(stageNum) {
+      const fieldObj = FIELDS[state.currentField];
+      const stageData = fieldObj.stages.find(s => s.stage === stageNum);
+      if (!stageData) return;
+      if (state.level < stageData.reqLv) {
+        spawnFloatingToast(`🔒 Lv.${stageData.reqLv} 달성 시 입장할 수 있습니다.`, 'text-rose-300 font-semibold text-xs');
+        return;
+      }
+      state.selectedStages[state.currentField] = stageNum;
+      updateFieldTabsUI();
+      renderStageSelector();
+      updateCanvasStageHeader();
+      if (currentRightTab === 'inventory') renderRightPanel();
+      initCanvasEntities();
+      addLog(`${fieldObj.icon} <b>${stageData.name} (${stageNum}단계)</b> 필드로 이동했습니다.`);
+      saveState();
+    }
+
+    function switchRightTab(tabName) {
+      currentRightTab = tabName;
+      ['inventory', 'craft', 'skills'].forEach(t => {
+        const btn = document.getElementById(`subtab-${t}`);
+        const panel = document.getElementById(`panel-${t}`);
+        if (t === tabName) {
+          btn.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 bg-white/15 text-white shadow';
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
+          panel.classList.add('hidden');
+        }
+      });
+      renderRightPanel();
+    }
+
+    function updateFieldTabsUI() {
+      const brandIcon = document.getElementById('brand-icon');
+      const curField = FIELDS[state.currentField];
+      brandIcon.textContent = curField.icon;
+
+      const styles = {
+        fire: {
+          active: 'bg-gradient-to-r from-amber-600/80 to-orange-600/80 text-white shadow-lg shadow-amber-600/20 border border-amber-400/50',
+          inactive: 'bg-slate-900/40 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+        },
+        water: {
+          active: 'bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white shadow-lg shadow-cyan-600/20 border border-cyan-400/50',
+          inactive: 'bg-slate-900/40 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+        },
+        grass: {
+          active: 'bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow-lg shadow-emerald-600/20 border border-emerald-400/50',
+          inactive: 'bg-slate-900/40 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+        }
+      };
+
+      ['fire', 'water', 'grass'].forEach(fid => {
+        const btn = document.getElementById(`tab-field-${fid}`);
+        const badge = document.getElementById(`badge-stage-${fid}`);
+        badge.textContent = `${state.selectedStages[fid]}단계`;
+        btn.className = `flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 ${state.currentField === fid ? styles[fid].active : styles[fid].inactive}`;
+      });
+    }
+
+    function updateCanvasStageHeader() {
+      const f = FIELDS[state.currentField];
+      const stageNum = state.selectedStages[state.currentField] || 1;
+      const st = f.stages[stageNum - 1];
+
+      const badge = document.getElementById('canvas-stage-badge');
+      badge.textContent = `${f.name} · STAGE ${st.stage}`;
+      if (f.id === 'fire') {
+        badge.className = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-500/30 text-amber-300 border border-amber-400/30';
+      } else if (f.id === 'water') {
+        badge.className = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-cyan-500/30 text-cyan-300 border border-cyan-400/30';
+      } else {
+        badge.className = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-500/30 text-emerald-300 border border-emerald-400/30';
+      }
+
+      document.getElementById('canvas-stage-title').textContent = st.name;
+      document.getElementById('canvas-stage-desc').textContent = st.desc;
+      document.getElementById('stage-selector-title').textContent = `${f.icon} ${f.name} 스테이지 선택 (레벨별 해금)`;
+    }
+
+    function renderStageSelector() {
+      const f = FIELDS[state.currentField];
+      const curStage = state.selectedStages[state.currentField] || 1;
+      const container = document.getElementById('stage-buttons-container');
+
+      container.innerHTML = f.stages.map(st => {
+        const unlocked = state.level >= st.reqLv;
+        const isSelected = curStage === st.stage;
+
+        let cls = '';
+        if (isSelected) {
+          cls = 'bg-white/15 border-white/50 text-white shadow-md ring-1 ring-white/30';
+        } else if (unlocked) {
+          cls = 'bg-slate-900/70 hover:bg-slate-800/90 border-white/10 text-slate-300';
+        } else {
+          cls = 'bg-slate-950/60 border-white/5 text-slate-500 opacity-70 cursor-not-allowed';
+        }
+
+        return `
+          <button onclick="selectStage(${st.stage})" class="p-2.5 rounded-xl border text-left transition flex flex-col justify-between gap-1 ${cls}">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-[11px] font-bold ${isSelected ? 'text-amber-300' : 'text-slate-400'}">${st.stage}단계</span>
+              ${unlocked
+                ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">해금됨</span>`
+                : `<span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300"><i class="fa-solid fa-lock mr-0.5"></i>Lv.${st.reqLv}</span>`
+              }
+            </div>
+            <div class="text-xs font-bold truncate">${st.name}</div>
+            <div class="text-[10px] text-slate-400">기본 EXP ${st.baseExp} · ${st.baseGold}G</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function updateHeaderAndStatsUI() {
+      const reqExp = getReqExp(state.level);
+      document.getElementById('ui-level').textContent = state.level;
+      document.getElementById('ui-exp-text').textContent = `${Math.floor(state.exp).toLocaleString()} / ${reqExp.toLocaleString()}`;
+      const expPct = Math.min(100, (state.exp / reqExp) * 100);
+      document.getElementById('ui-exp-bar').style.width = `${expPct}%`;
+      document.getElementById('ui-gold').textContent = Math.floor(state.gold).toLocaleString();
+
+      document.getElementById('stat-exp-mult').textContent = `x${getExpMultiplier().toFixed(2)}`;
+      document.getElementById('stat-gold-mult').textContent = `x${getGoldMultiplier().toFixed(2)}`;
+      document.getElementById('stat-drop-rate').textContent = `${getDropChancePct().toFixed(1)}%`;
+    }
+
+    function updateLiveBarsUI(intervalMs) {
+      // Immersion Bar
+      const bonusPct = getImmersionBonusPct();
+      const maxBonusPct = getMaxImmersionBonusPct();
+      const barWidth = Math.min(100, (bonusPct / maxBonusPct) * 100);
+
+      document.getElementById('ui-immersion-bonus').textContent = bonusPct;
+      document.getElementById('ui-immersion-sec').textContent = Math.floor(state.immersionSeconds);
+      document.getElementById('ui-immersion-bar').style.width = `${barWidth}%`;
+
+      const statusEl = document.getElementById('immersion-status-text');
+      if (state.immersionSeconds >= 58) {
+        statusEl.textContent = '✨ 깊은 물아일체 상태 (최대 몰입 보너스 적용 중!)';
+        statusEl.className = 'text-[11px] text-cyan-300 font-medium';
+      } else if (state.immersionSeconds >= 20) {
+        statusEl.textContent = '🌿 마음이 차분하게 가라앉으며 몰입이 깊어집니다...';
+        statusEl.className = 'text-[11px] text-emerald-300';
+      } else {
+        statusEl.textContent = '(버튼을 누르지 않고 바라볼수록 보상이 증가합니다)';
+        statusEl.className = 'text-[11px] text-slate-400';
+      }
+
+      // Tick Bar
+      document.getElementById('ui-tick-interval').textContent = (intervalMs / 1000).toFixed(1);
+      const tickPct = Math.min(100, (tickProgressMs / intervalMs) * 100);
+      document.getElementById('ui-tick-bar').style.width = `${tickPct}%`;
+
+      // Active Buff Pill
+      const buffPill = document.getElementById('active-buff-pill');
+      if (state.activeBuffs.communeRemain > 0) {
+        buffPill.classList.remove('hidden');
+        document.getElementById('buff-remain-sec').textContent = Math.ceil(state.activeBuffs.communeRemain);
+      } else {
+        buffPill.classList.add('hidden');
+      }
+
+      // Update skills cooldown buttons if skills tab is open
+      if (currentRightTab === 'skills') {
+        ['skill_commune', 'skill_inspiration'].forEach(skId => {
+          const cdEl = document.getElementById(`cd-text-${skId}`);
+          if (cdEl) {
+            const rem = state.cooldowns[skId];
+            cdEl.textContent = rem > 0 ? `쿨타임 ${Math.ceil(rem)}초` : '즉시 발동';
+          }
+        });
+      }
+
+      // Keep top stats synced with immersion changes
+      document.getElementById('stat-exp-mult').textContent = `x${getExpMultiplier().toFixed(2)}`;
+      document.getElementById('stat-gold-mult').textContent = `x${getGoldMultiplier().toFixed(2)}`;
+      document.getElementById('stat-drop-rate').textContent = `${getDropChancePct().toFixed(1)}%`;
+    }
+
+    function renderRightPanel() {
+      if (currentRightTab === 'inventory') renderInventoryPanel();
+      else if (currentRightTab === 'craft') renderCraftPanel();
+      else if (currentRightTab === 'skills') renderSkillsPanel();
+    }
+
+    // --- Render Inventory Panel ---
+    function renderInventoryPanel() {
+      // 1. Tier Probabilities for current stage
+      const weights = getAdjustedTierWeights(state.currentField);
+      const total = weights.reduce((a, b) => a + b, 0);
+      const tierNames = ['일반', '고급', '희귀', '영웅', '전설'];
+      const tierColors = ['text-slate-300', 'text-emerald-300', 'text-sky-300', 'text-purple-300', 'text-amber-300'];
+
+      const probsContainer = document.getElementById('ui-tier-probs');
+      probsContainer.innerHTML = weights.map((w, idx) => {
+        const pct = total > 0 ? ((w / total) * 100).toFixed(1) : '0.0';
+        return `<span class="${tierColors[idx]}">${tierNames[idx]} ${pct}%</span>`;
+      }).join('<span class="text-slate-600">·</span>');
+
+      // 2. Material lists per attribute
+      const listContainer = document.getElementById('inventory-lists-container');
+      listContainer.innerHTML = Object.values(FIELDS).map(f => {
+        const rows = f.items.map(item => {
+          const count = state.inventory[item.id] || 0;
+          return `
+            <div class="flex items-center justify-between p-2 rounded-xl border ${item.border} ${item.bg} ${count === 0 ? 'opacity-50' : ''}">
+              <div class="flex items-center gap-2.5">
+                <span class="text-lg">${item.icon}</span>
+                <div>
+                  <div class="text-xs font-bold ${item.color}">
+                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-black/40 mr-1">${item.tierName}</span>${item.name}
+                  </div>
+                </div>
+              </div>
+              <div class="text-sm font-bold text-white px-2">
+                ${count.toLocaleString()}<span class="text-xs font-normal text-slate-400 ml-0.5">개</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-slate-900/50 border border-white/5 rounded-2xl p-3">
+            <div class="text-xs font-bold text-slate-200 mb-2 flex items-center gap-1.5">
+              <span>${f.icon}</span>
+              <span>${f.name} 채집물</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${rows}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Material Transmutation (5 lower tier -> 1 higher tier)
+    function transmuteAllPossible() {
+      let transmutedCount = 0;
+      Object.values(FIELDS).forEach(f => {
+        for (let i = 0; i < 4; i++) {
+          const curId = f.items[i].id;
+          const nextId = f.items[i + 1].id;
+          const curQty = state.inventory[curId] || 0;
+          if (curQty >= 5) {
+            const pairs = Math.floor(curQty / 5);
+            state.inventory[curId] -= pairs * 5;
+            state.inventory[nextId] = (state.inventory[nextId] || 0) + pairs;
+            transmutedCount += pairs;
+          }
+        }
+      });
+
+      if (transmutedCount > 0) {
+        spawnFloatingToast(`⚗️ 상위 재료 ${transmutedCount}개 연성 완료!`, 'text-indigo-300 font-bold text-sm', true);
+        addLog(`⚗️ 하위 재료를 조합하여 상위 티어 재료 <b>${transmutedCount}개</b>를 연성했습니다.`);
+        renderRightPanel();
+        checkCraftableBadge();
+        saveState();
+      } else {
+        spawnFloatingToast(`연성 가능한 재료가 부족합니다 (동일 재료 5개 이상 필요)`, 'text-slate-300 text-xs');
+      }
+    }
+
+    // --- Render Artifact Workshop Panel ---
+    function canCraftArtifact(recipe) {
+      if (state.artifacts[recipe.id]) return false;
+      if (state.level < recipe.reqLv) return false;
+      for (const [itemId, reqCount] of Object.entries(recipe.ingredients)) {
+        if ((state.inventory[itemId] || 0) < reqCount) return false;
+      }
+      return true;
+    }
+
+    function checkCraftableBadge() {
+      const anyCraftable = ARTIFACT_RECIPES.some(r => canCraftArtifact(r));
+      const badge = document.getElementById('craft-craftable-badge');
+      if (badge) {
+        if (anyCraftable) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+      }
+    }
+
+    function craftArtifact(recipeId) {
+      const recipe = ARTIFACT_RECIPES.find(r => r.id === recipeId);
+      if (!recipe || !canCraftArtifact(recipe)) return;
+
+      for (const [itemId, reqCount] of Object.entries(recipe.ingredients)) {
+        state.inventory[itemId] -= reqCount;
+      }
+      state.artifacts[recipe.id] = true;
+
+      spawnFloatingToast(`🏆 [${recipe.name}] 아티팩트 연성 성공!`, 'text-amber-300 font-bold text-base', true);
+      addLog(`🏺 <b class="text-amber-300">[${recipe.name}]</b> 제작 완료! (${recipe.effectDesc})`);
+      playLevelUpChime();
+
+      updateAllUI();
+      saveState();
+    }
+
+    function renderCraftPanel() {
+      const craftedCount = Object.values(state.artifacts).filter(Boolean).length;
+      document.getElementById('ui-artifact-count').textContent = `${craftedCount} / ${ARTIFACT_RECIPES.length} 제작됨`;
+
+      const container = document.getElementById('craft-list-container');
+      container.innerHTML = ARTIFACT_RECIPES.map(r => {
+        const isCrafted = state.artifacts[r.id];
+        const unlocked = state.level >= r.reqLv;
+        const craftable = canCraftArtifact(r);
+
+        const ingBadges = Object.entries(r.ingredients).map(([itemId, reqQty]) => {
+          const item = ITEM_MAP[itemId];
+          const curQty = state.inventory[itemId] || 0;
+          const enough = curQty >= reqQty;
+          return `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border ${enough ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200' : 'bg-slate-900/80 border-white/10 text-slate-400'}">
+              <span>${item.icon}</span>
+              <span>${item.name}</span>
+              <b class="${enough ? 'text-emerald-300' : 'text-rose-300'}">${curQty}/${reqQty}</b>
+            </span>
+          `;
+        }).join('');
+
+        return `
+          <div class="p-3.5 rounded-2xl border transition ${isCrafted ? 'bg-amber-950/20 border-amber-400/40' : unlocked ? 'bg-slate-900/60 border-white/10' : 'bg-slate-950/60 border-white/5 opacity-65'}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                  ${r.icon}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold px-1.5 py-0.5 rounded ${unlocked ? 'bg-indigo-500/20 text-indigo-300' : 'bg-rose-500/20 text-rose-300'}">Lv.${r.reqLv}</span>
+                    <h4 class="text-sm font-bold text-white">${r.name}</h4>
+                  </div>
+                  <p class="text-xs text-amber-300 font-medium mt-0.5">${r.effectDesc}</p>
+                </div>
+              </div>
+
+              ${isCrafted
+                ? `<span class="px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-check mr-1"></i>보유 중</span>`
+                : `<button onclick="craftArtifact('${r.id}')" ${craftable ? '' : 'disabled'} class="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${craftable ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:brightness-110 shadow-md' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                    제작하기
+                  </button>`
+              }
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">${r.lore}</p>
+            <div class="flex flex-wrap gap-1.5 mt-2.5">
+              ${ingBadges}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Render Meditation Skills Panel ---
+    function getSkillUpgradeCost(sk) {
+      const curLv = state.skills[sk.id] || 0;
+      return Math.floor(sk.baseCost * Math.pow(sk.costMult, curLv));
+    }
+
+    function upgradeSkill(skillId) {
+      const sk = SKILLS_DATA.find(s => s.id === skillId);
+      if (!sk) return;
+      const curLv = state.skills[skillId] || 0;
+      if (state.level < sk.reqLv || curLv >= sk.maxLv) return;
+
+      const cost = getSkillUpgradeCost(sk);
+      if (state.gold < cost) {
+        spawnFloatingToast(`골드가 부족합니다. (${cost.toLocaleString()} G 필요)`, 'text-rose-300 text-xs');
+        return;
+      }
+
+      state.gold -= cost;
+      state.skills[skillId] = curLv + 1;
+      addLog(`🧘 <b class="text-cyan-300">[${sk.name}]</b> 스킬이 Lv.${state.skills[skillId]}(으)로 성장했습니다!`);
+      updateAllUI();
+      saveState();
+    }
+
+    function useActiveSkill(skillId) {
+      const sk = SKILLS_DATA.find(s => s.id === skillId);
+      if (!sk) return;
+      const skLv = state.skills[skillId] || 0;
+      if (skLv <= 0) {
+        spawnFloatingToast(`먼저 스킬을 해금해주세요!`, 'text-rose-300 text-xs');
+        return;
+      }
+      if (state.cooldowns[skillId] > 0) {
+        spawnFloatingToast(`아직 쿨타임입니다. (${Math.ceil(state.cooldowns[skillId])}초 남음)`, 'text-amber-300 text-xs');
+        return;
+      }
+
+      const curFieldObj = FIELDS[state.currentField];
+      const stageIdx = (state.selectedStages[state.currentField] || 1) - 1;
+      const stageData = curFieldObj.stages[stageIdx];
+
+      if (skillId === 'skill_commune') {
+        state.cooldowns.skill_commune = sk.cooldown;
+        state.activeBuffs.communeRemain = sk.duration;
+        const bonusExp = Math.round(stageData.baseExp * getExpMultiplier() * (skLv * 8));
+        gainExp(bonusExp);
+        spawnFloatingToast(`🔥 ${curFieldObj.activeActionName}! (+${bonusExp.toLocaleString()} EXP & 20초간 드롭률 2배)`, 'text-amber-300 font-bold text-sm', true);
+        addLog(`✨ 액티브 스킬 <b>[${curFieldObj.activeActionName}]</b> 발동! 20초간 아이템 발견 확률이 2배로 증가합니다.`);
+        triggerCanvasBurst();
+      } else if (skillId === 'skill_inspiration') {
+        state.cooldowns.skill_inspiration = sk.cooldown;
+        const dropCount = skLv >= 3 ? (Math.random() < 0.5 ? 3 : 2) : (Math.random() < 0.5 ? 2 : 1);
+        const obtainedNames = [];
+        for (let i = 0; i < dropCount; i++) {
+          const item = rollFieldItem(state.currentField);
+          state.inventory[item.id] = (state.inventory[item.id] || 0) + 1;
+          obtainedNames.push(`${item.icon}${item.name}`);
+        }
+        const bonusGold = Math.round(stageData.baseGold * getGoldMultiplier() * (skLv * 6));
+        state.gold += bonusGold;
+
+        spawnFloatingToast(`🌟 영감의 순간! ${obtainedNames.join(', ')} & +${bonusGold.toLocaleString()}G`, 'text-cyan-300 font-bold text-sm', true);
+        addLog(`🌟 <b>[영감의 순간]</b>으로 ${obtainedNames.join(', ')} 및 ${bonusGold.toLocaleString()} G를 즉시 획득했습니다!`);
+        triggerCanvasBurst();
+      }
+
+      updateAllUI();
+      saveState();
+    }
+
+    function renderSkillsPanel() {
+      const curFieldObj = FIELDS[state.currentField];
+      const container = document.getElementById('skills-list-container');
+
+      container.innerHTML = SKILLS_DATA.map(sk => {
+        const curLv = state.skills[sk.id] || 0;
+        const unlocked = state.level >= sk.reqLv;
+        const isMax = curLv >= sk.maxLv;
+        const cost = getSkillUpgradeCost(sk);
+        const canAfford = unlocked && !isMax && state.gold >= cost;
+
+        // Dynamic skill name for skill_commune based on field
+        const displayName = sk.id === 'skill_commune'
+          ? `${curFieldObj.activeActionName} (자연의 교감)`
+          : sk.name;
+
+        return `
+          <div class="p-3.5 rounded-2xl border transition ${unlocked ? 'bg-slate-900/60 border-white/10' : 'bg-slate-950/60 border-white/5 opacity-65'}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                  ${sk.icon}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${sk.type === 'active' ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'}">
+                      ${sk.type === 'active' ? '액티브' : '패시브'}
+                    </span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${unlocked ? 'bg-indigo-500/20 text-indigo-300' : 'bg-rose-500/20 text-rose-300'}">요구 Lv.${sk.reqLv}</span>
+                    <h4 class="text-sm font-bold text-white">${displayName}</h4>
+                  </div>
+                  <div class="text-xs text-slate-400 mt-0.5">현재 레벨: <b class="text-white">Lv.${curLv}</b> / ${sk.maxLv}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                ${sk.type === 'active' && curLv > 0 ? `
+                  <button onclick="useActiveSkill('${sk.id}')" class="no-immersion-reset px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition">
+                    <span id="cd-text-${sk.id}">${state.cooldowns[sk.id] > 0 ? `쿨타임 ${Math.ceil(state.cooldowns[sk.id])}초` : '즉시 발동'}</span>
+                  </button>
+                ` : ''}
+
+                <button onclick="upgradeSkill('${sk.id}')" ${canAfford ? '' : 'disabled'} class="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${isMax ? 'bg-emerald-900/40 text-emerald-300 cursor-default' : canAfford ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                  ${isMax ? '최고 레벨' : curLv === 0 ? `습득 (${cost.toLocaleString()}G)` : `강화 (${cost.toLocaleString()}G)`}
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">${sk.getDesc(curLv)}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateAllUI() {
+      updateFieldTabsUI();
+      updateCanvasStageHeader();
+      renderStageSelector();
+      updateHeaderAndStatsUI();
+      renderRightPanel();
+      checkCraftableBadge();
+    }
+
+    // --- Logs & Floating Toasts ---
+    function addLog(htmlMsg) {
+      const logBox = document.getElementById('activity-log');
+      if (!logBox) return;
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const div = document.createElement('div');
+      div.className = 'flex items-baseline gap-2 py-0.5 border-b border-white/5 last:border-0';
+      div.innerHTML = `<span class="text-[10px] text-slate-500 font-mono">[${timeStr}]</span><span class="flex-1">${htmlMsg}</span>`;
+      logBox.prepend(div);
+      while (logBox.children.length > 40) {
+        logBox.removeChild(logBox.lastChild);
+      }
+    }
+
+    function clearLogs() {
+      const logBox = document.getElementById('activity-log');
+      if (logBox) logBox.innerHTML = '<div class="text-slate-500 italic">로그가 비워졌습니다.</div>';
+    }
+
+    function spawnFloatingToast(text, extraCls = 'text-white text-xs', isImportant = false) {
+      const container = document.getElementById('floating-rewards');
+      if (!container) return;
+      const el = document.createElement('div');
+      const leftPct = isImportant ? 50 : 28 + Math.random() * 44;
+      const topPct = isImportant ? 36 : 45 + Math.random() * 25;
+
+      el.className = `absolute -translate-x-1/2 animate-float-up pointer-events-none whitespace-nowrap ${extraCls}`;
+      el.style.left = `${leftPct}%`;
+      el.style.top = `${topPct}%`;
+      el.innerHTML = text;
+
+      container.appendChild(el);
+      setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 2600);
+    }
+
+    /*************************************************************************
+     * 6. CHEAT / TEST SUPPORT MENU FUNCTIONS
+     *************************************************************************/
+    function toggleCheatMenu() {
+      const menu = document.getElementById('cheat-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function cheatAddLevel(amount) {
+      state.level += amount;
+      spawnFloatingToast(`⚡ 테스트 지원: 레벨 +${amount} 상승! (현재 Lv.${state.level})`, 'text-indigo-300 font-bold text-sm', true);
+      addLog(`🛠️ [테스트 지원] 플레이어 레벨이 <b>Lv.${state.level}</b>(으)로 상승했습니다.`);
+      updateAllUI();
+      saveState();
+    }
+
+    function cheatAddGold(amount) {
+      state.gold += amount;
+      spawnFloatingToast(`💰 테스트 지원: +${amount.toLocaleString()} G 지급!`, 'text-amber-300 font-bold text-sm', true);
+      addLog(`🛠️ [테스트 지원] <b>${amount.toLocaleString()} G</b>가 지급되었습니다.`);
+      updateAllUI();
+      saveState();
+    }
+
+    function cheatAddAllMaterials(count) {
+      Object.keys(ITEM_MAP).forEach(id => {
+        state.inventory[id] = (state.inventory[id] || 0) + count;
+      });
+      spawnFloatingToast(`🎒 모든 속성 재료 15종 +${count}개씩 지급 완료!`, 'text-emerald-300 font-bold text-sm', true);
+      addLog(`🛠️ [테스트 지원] 모든 불·물·풀 재료(15종)가 <b>${count}개씩</b> 지급되었습니다.`);
+      updateAllUI();
+      saveState();
+    }
+
+    function cheatMaxImmersion() {
+      state.immersionSeconds = 60;
+      spawnFloatingToast(`🧘 멍 때리기 몰입도 100% 즉시 달성!`, 'text-cyan-300 font-bold text-sm', true);
+      updateLiveBarsUI(getTickIntervalMs());
+    }
+
+    function cheatResetCooldowns() {
+      state.cooldowns.skill_commune = 0;
+      state.cooldowns.skill_inspiration = 0;
+      spawnFloatingToast(`🔄 모든 액티브 스킬 쿨타임 초기화!`, 'text-rose-300 font-bold text-sm', true);
+      updateAllUI();
+    }
+
+    /*************************************************************************
+     * 7. PROCEDURAL WEB AUDIO API ASMR SYNTHESIZER
+     *************************************************************************/
+    let audioCtx = null;
+    let isAudioOn = false;
+    let noiseNode = null;
+    let filterNode = null;
+    let gainNode = null;
+    let asmrIntervalId = null;
+
+    function toggleAudio() {
+      if (!isAudioOn) {
+        startAudio();
+      } else {
+        stopAudio();
+      }
+    }
+
+    function startAudio() {
+      try {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        // Create continuous pink/brown noise buffer for ambient background
+        const bufferSize = audioCtx.sampleRate * 3;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          data[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = data[i];
+          data[i] *= 0.35;
+        }
+
+        noiseNode = audioCtx.createBufferSource();
+        noiseNode.buffer = buffer;
+        noiseNode.loop = true;
+
+        filterNode = audioCtx.createBiquadFilter();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.18;
+
+        noiseNode.connect(filterNode);
+        filterNode.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        noiseNode.start();
+
+        isAudioOn = true;
+        updateAudioButtonUI();
+        updateAudioSoundscape();
+
+        // Periodic subtle organic ASMR textures (crackles, water drops, crickets)
+        if (asmrIntervalId) clearInterval(asmrIntervalId);
+        asmrIntervalId = setInterval(triggerProceduralTextureSound, 280);
+      } catch (e) {
+        console.warn('Web Audio API 시작 실패:', e);
+      }
+    }
+
+    function stopAudio() {
+      isAudioOn = false;
+      if (noiseNode) {
+        try { noiseNode.stop(); noiseNode.disconnect(); } catch (e) {}
+        noiseNode = null;
+      }
+      if (asmrIntervalId) {
+        clearInterval(asmrIntervalId);
+        asmrIntervalId = null;
+      }
+      updateAudioButtonUI();
+    }
+
+    function updateAudioButtonUI() {
+      const icon = document.getElementById('icon-audio');
+      const text = document.getElementById('text-audio');
+      const btn = document.getElementById('btn-audio-toggle');
+      if (isAudioOn) {
+        icon.className = 'fa-solid fa-volume-high text-emerald-400';
+        text.textContent = 'ASMR 켜짐';
+        btn.className = 'no-immersion-reset flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-400/40 text-xs font-medium text-emerald-200 transition shadow-sm';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-slate-400';
+        text.textContent = 'ASMR 끄기';
+        btn.className = 'no-immersion-reset flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-white/10 text-xs font-medium text-slate-200 transition shadow-sm';
+      }
+    }
+
+    function updateAudioSoundscape() {
+      if (!isAudioOn || !filterNode || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      if (state.currentField === 'fire') {
+        // Warm low hearth rumble
+        filterNode.type = 'lowpass';
+        filterNode.frequency.setTargetAtTime(240, now, 0.3);
+        gainNode.gain.setTargetAtTime(0.22, now, 0.3);
+      } else if (state.currentField === 'water') {
+        // Gentle rain / ocean wave wash
+        filterNode.type = 'bandpass';
+        filterNode.frequency.setTargetAtTime(650, now, 0.3);
+        filterNode.Q.value = 0.7;
+        gainNode.gain.setTargetAtTime(0.16, now, 0.3);
+      } else {
+        // Soft forest breeze
+        filterNode.type = 'bandpass';
+        filterNode.frequency.setTargetAtTime(420, now, 0.3);
+        filterNode.Q.value = 1.2;
+        gainNode.gain.setTargetAtTime(0.14, now, 0.3);
+      }
+    }
+
+    function triggerProceduralTextureSound() {
+      if (!isAudioOn || !audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      if (state.currentField === 'fire') {
+        // Firewood crackle/pop
+        if (Math.random() < 0.55) {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1200 + Math.random() * 2200, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
+          g.gain.setValueAtTime(0.035 * Math.random(), now);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        }
+      } else if (state.currentField === 'water') {
+        // Water droplet plink
+        if (Math.random() < 0.35) {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          const baseFreq = 600 + Math.random() * 700;
+          osc.frequency.setValueAtTime(baseFreq, now);
+          osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, now + 0.09);
+          g.gain.setValueAtTime(0.02, now);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.11);
+        }
+      } else {
+        // Nature cricket/wind chime harmonic
+        if (Math.random() < 0.28) {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+          const freq = notes[Math.floor(Math.random() * notes.length)];
+          osc.frequency.setValueAtTime(freq, now);
+          g.gain.setValueAtTime(0.012, now);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        }
+      }
+    }
+
+    function playItemDropChime(tier) {
+      if (!isAudioOn || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'sine';
+      const baseFreq = 440 + tier * 110;
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.25, now + 0.25);
+      g.gain.setValueAtTime(0.04, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    }
+
+    function playLevelUpChime() {
+      if (!isAudioOn || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        g.gain.setValueAtTime(0.04, now + idx * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.35);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.36);
+      });
+    }
+
+    /*************************************************************************
+     * 8. HTML5 CANVAS ENGINE (불멍·물멍·풀멍 1~5단계 진화 그래픽 연출)
+     *************************************************************************/
+    const canvas = document.getElementById('healing-canvas');
+    const ctx = canvas.getContext('2d');
+    let cw = 800;
+    let ch = 430;
+
+    let particles = [];
+    let ripples = [];
+    let backgroundStars = [];
+    let grassBlades = [];
+
+    function resizeCanvas() {
+      const wrapper = document.getElementById('canvas-wrapper');
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      cw = Math.max(300, Math.floor(rect.width));
+      ch = Math.max(260, Math.floor(rect.height));
+      canvas.width = cw;
+      canvas.height = ch;
+      initCanvasEntities();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function initCanvasEntities() {
+      particles = [];
+      ripples = [];
+      backgroundStars = [];
+      grassBlades = [];
+
+      // Create night sky stars
+      for (let i = 0; i < 65; i++) {
+        backgroundStars.push({
+          x: Math.random() * cw,
+          y: Math.random() * (ch * 0.65),
+          r: Math.random() * 1.6 + 0.4,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.015 + Math.random() * 0.03
+        });
+      }
+
+      const stage = state.selectedStages[state.currentField] || 1;
+      if (state.currentField === 'grass') {
+        const count = stage === 1 ? 7 : stage === 2 ? 45 : stage === 3 ? 95 : stage === 4 ? 140 : 110;
+        for (let i = 0; i < count; i++) {
+          grassBlades.push({
+            x: stage === 1 ? (cw * 0.5 + (Math.random() - 0.5) * 65) : Math.random() * cw,
+            h: stage === 1 ? (35 + Math.random() * 35) : (40 + Math.random() * (30 + stage * 16)),
+            swayOffset: Math.random() * Math.PI * 2,
+            hue: stage === 3 ? (38 + Math.random() * 14) : (115 + Math.random() * 35),
+            hasFlower: stage === 2 && Math.random() < 0.28
+          });
+        }
+      }
+    }
+
+    // Canvas click interaction (does NOT reset immersion! Instead creates gentle visual feedback)
+    function handleCanvasInteract(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (state.currentField === 'water') {
+        ripples.push({ x, y: Math.max(ch * 0.45, y), r: 2, maxR: 65 + Math.random() * 45, alpha: 0.9 });
+      } else if (state.currentField === 'fire') {
+        for (let i = 0; i < 14; i++) {
+          particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 3.5,
+            vy: -1.5 - Math.random() * 3.5,
+            size: 2 + Math.random() * 4,
+            alpha: 1,
+            color: Math.random() < 0.5 ? '#fbbf24' : '#f97316',
+            type: 'spark'
+          });
+        }
+      } else {
+        for (let i = 0; i < 10; i++) {
+          particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 2.5,
+            vy: -0.5 - Math.random() * 2,
+            size: 2.5 + Math.random() * 3,
+            alpha: 1,
+            color: '#a7f3d0',
+            type: 'leaf'
+          });
+        }
+      }
+    }
+
+    function triggerCanvasBurst() {
+      for (let i = 0; i < 30; i++) {
+        particles.push({
+          x: cw * 0.5 + (Math.random() - 0.5) * 140,
+          y: ch * 0.6 + (Math.random() - 0.5) * 60,
+          vx: (Math.random() - 0.5) * 5,
+          vy: -2 - Math.random() * 4,
+          size: 3 + Math.random() * 4,
+          alpha: 1,
+          color: state.currentField === 'fire' ? '#fde047' : state.currentField === 'water' ? '#67e8f9' : '#6ee7b7',
+          type: 'spark'
+        });
+      }
+    }
+
+    // Main Canvas Render Loop (60 FPS)
+    let animTime = 0;
+    function renderCanvasLoop() {
+      animTime += 0.02;
+      ctx.clearRect(0, 0, cw, ch);
+
+      const field = state.currentField;
+      const stage = state.selectedStages[field] || 1;
+
+      // 1. Draw Sky & Background Gradient
+      drawSkyBackground(field, stage);
+
+      // 2. Draw Legendary Grail Aura if art_6 is crafted
+      if (state.artifacts.art_6) {
+        drawGrailAura();
+      }
+
+      // 3. Draw Field-specific Stage Scene
+      if (field === 'fire') {
+        drawFireScene(stage);
+      } else if (field === 'water') {
+        drawWaterScene(stage);
+      } else {
+        drawGrassScene(stage);
+      }
+
+      // 4. Update & Draw Interactive Particles
+      updateAndDrawExtraParticles();
+
+      requestAnimationFrame(renderCanvasLoop);
+    }
+
+    function drawSkyBackground(field, stage) {
+      const grad = ctx.createLinearGradient(0, 0, 0, ch);
+      if (field === 'fire') {
+        if (stage <= 2) {
+          grad.addColorStop(0, '#070912');
+          grad.addColorStop(0.65, '#18121e');
+          grad.addColorStop(1, '#261715');
+        } else if (stage <= 4) {
+          grad.addColorStop(0, '#0d0714');
+          grad.addColorStop(0.6, '#2d1219');
+          grad.addColorStop(1, '#4a1810');
+        } else {
+          grad.addColorStop(0, '#140b29');
+          grad.addColorStop(0.55, '#3b1728');
+          grad.addColorStop(1, '#6b2c14');
+        }
+      } else if (field === 'water') {
+        if (stage <= 2) {
+          grad.addColorStop(0, '#08101f');
+          grad.addColorStop(0.6, '#0f233d');
+          grad.addColorStop(1, '#09192b');
+        } else if (stage <= 4) {
+          grad.addColorStop(0, '#050c1a');
+          grad.addColorStop(0.5, '#0c2b47');
+          grad.addColorStop(1, '#071f36');
+        } else {
+          grad.addColorStop(0, '#030712');
+          grad.addColorStop(0.45, '#0d3b66');
+          grad.addColorStop(1, '#041c32');
+        }
+      } else {
+        if (stage <= 2) {
+          grad.addColorStop(0, '#071214');
+          grad.addColorStop(0.65, '#0f2926');
+          grad.addColorStop(1, '#0c1f17');
+        } else if (stage === 3) {
+          grad.addColorStop(0, '#12101f');
+          grad.addColorStop(0.6, '#2d232e');
+          grad.addColorStop(1, '#241c15');
+        } else {
+          grad.addColorStop(0, '#05121c');
+          grad.addColorStop(0.55, '#0c332e');
+          grad.addColorStop(1, '#082219');
+        }
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Twinkling stars
+      backgroundStars.forEach(st => {
+        st.phase += st.speed;
+        const alpha = 0.25 + (Math.sin(st.phase) * 0.5 + 0.5) * 0.65;
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawGrailAura() {
+      ctx.save();
+      const cx = cw * 0.5;
+      const cy = ch * 0.52;
+      const r = 130 + Math.sin(animTime * 1.5) * 12;
+      const auraGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, r * 1.6);
+      auraGrad.addColorStop(0, 'rgba(253, 224, 71, 0.14)');
+      auraGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.08)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ==================== FIRE SCENE (불멍 1~5단계) ====================
+    function drawFireScene(stage) {
+      const cx = cw * 0.5;
+      const groundY = ch * 0.76;
+
+      // Ground Silhouette
+      ctx.fillStyle = stage === 4 ? '#1f0909' : '#0b090c';
+      ctx.beginPath();
+      ctx.ellipse(cx, groundY + 45, cw * 0.65, 90, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Radial warm glow around fire
+      const glowRadius = 75 + stage * 45 + Math.sin(animTime * 3) * 10;
+      const glow = ctx.createRadialGradient(cx, groundY - 20, 5, cx, groundY - 20, glowRadius);
+      if (stage === 5) {
+        glow.addColorStop(0, 'rgba(253, 224, 71, 0.55)');
+        glow.addColorStop(0.45, 'rgba(245, 158, 11, 0.25)');
+      } else {
+        glow.addColorStop(0, 'rgba(251, 146, 60, 0.48)');
+        glow.addColorStop(0.5, 'rgba(220, 38, 38, 0.18)');
+      }
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, groundY - 20, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stage Base Structure (Logs, Stones, Brazier, Crater, Solar Altar)
+      if (stage === 1 || stage === 2) {
+        // Crossed Wooden Logs
+        ctx.save();
+        ctx.fillStyle = '#3f2314';
+        ctx.strokeStyle = '#1f1008';
+        ctx.lineWidth = 2;
+        const logW = stage === 1 ? 75 : 110;
+        const logH = stage === 1 ? 14 : 18;
+        ctx.translate(cx, groundY);
+        ctx.rotate(-0.22);
+        ctx.fillRect(-logW / 2, -logH / 2, logW, logH);
+        ctx.rotate(0.44);
+        ctx.fillRect(-logW / 2, -logH / 2, logW, logH);
+        ctx.restore();
+
+        if (stage === 2) {
+          // Campfire ring stones
+          for (let i = -3; i <= 3; i++) {
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.ellipse(cx + i * 20, groundY + 10 + Math.abs(i) * -1.5, 11, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      } else if (stage === 3) {
+        // Grand Sacred Brazier (성화 화로)
+        ctx.fillStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(cx - 75, groundY - 12);
+        ctx.lineTo(cx + 75, groundY - 12);
+        ctx.lineTo(cx + 48, groundY + 18);
+        ctx.lineTo(cx - 48, groundY + 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(cx - 30, groundY + 18, 60, 22);
+      } else if (stage === 4) {
+        // Boiling Lava Crater (용암이 끓는 화구)
+        const lavaGrad = ctx.createRadialGradient(cx, groundY + 5, 10, cx, groundY + 5, 130);
+        lavaGrad.addColorStop(0, '#fde047');
+        lavaGrad.addColorStop(0.4, '#ef4444');
+        lavaGrad.addColorStop(0.85, '#7f1d1d');
+        lavaGrad.addColorStop(1, '#1c0707');
+        ctx.fillStyle = lavaGrad;
+        ctx.beginPath();
+        ctx.ellipse(cx, groundY + 6, 135, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (stage === 5) {
+        // Solar Fire Altar (태양의 불꽃 제단)
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, groundY + 6, 150, 32, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.moveTo(cx - 95, groundY - 5);
+        ctx.lineTo(cx + 95, groundY - 5);
+        ctx.lineTo(cx + 70, groundY + 22);
+        ctx.lineTo(cx - 70, groundY + 22);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Dynamic Flame Layers
+      const flameLayers = stage === 1 ? 5 : stage === 2 ? 9 : stage === 3 ? 14 : stage === 4 ? 20 : 25;
+      const baseSpread = stage * 22;
+      const maxH = 32 + stage * 30;
+
+      for (let i = 0; i < flameLayers; i++) {
+        const ratio = i / flameLayers;
+        const offset = Math.sin(animTime * 3.5 + i * 1.3) * (8 + stage * 4);
+        const fx = cx + (ratio - 0.5) * baseSpread + offset * 0.35;
+        const fh = maxH * (1 - Math.abs(ratio - 0.5) * 1.1) * (0.85 + Math.sin(animTime * 5 + i) * 0.15);
+        const fw = (14 + stage * 7) * (1 - Math.abs(ratio - 0.5) * 0.6);
+
+        const fGrad = ctx.createLinearGradient(fx, groundY - 8, fx, groundY - fh);
+        if (stage === 5) {
+          fGrad.addColorStop(0, 'rgba(254, 240, 138, 0.92)');
+          fGrad.addColorStop(0.5, 'rgba(251, 191, 36, 0.75)');
+          fGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+        } else {
+          fGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
+          fGrad.addColorStop(0.4, 'rgba(249, 115, 22, 0.78)');
+          fGrad.addColorStop(0.8, 'rgba(220, 38, 38, 0.45)');
+          fGrad.addColorStop(1, 'rgba(153, 27, 27, 0)');
+        }
+
+        ctx.fillStyle = fGrad;
+        ctx.beginPath();
+        ctx.moveTo(fx - fw, groundY - 5);
+        ctx.quadraticCurveTo(fx - fw * 0.4 + offset, groundY - fh * 0.6, fx + offset * 0.6, groundY - fh);
+        ctx.quadraticCurveTo(fx + fw * 0.4 + offset, groundY - fh * 0.6, fx + fw, groundY - 5);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Spawn rising embers / sparks
+      if (Math.random() < 0.3 + stage * 0.14) {
+        particles.push({
+          x: cx + (Math.random() - 0.5) * baseSpread * 0.9,
+          y: groundY - 15 - Math.random() * 25,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: -0.9 - Math.random() * (1.2 + stage * 0.4),
+          size: 1.5 + Math.random() * (1.5 + stage * 0.4),
+          alpha: 0.95,
+          color: stage === 5 ? '#fef08a' : Math.random() < 0.6 ? '#fbbf24' : '#f97316',
+          type: 'spark'
+        });
+      }
+    }
+
+    // ==================== WATER SCENE (물멍 1~5단계) ====================
+    function drawWaterScene(stage) {
+      const waterTopY = stage === 1 ? ch * 0.64 : stage === 2 ? ch * 0.56 : ch * 0.46;
+
+      // Water Surface Body
+      if (stage === 1) {
+        // Stage 1: Small Rain Puddle on dark wet ground
+        ctx.fillStyle = '#070d17';
+        ctx.fillRect(0, waterTopY - 25, cw, ch - waterTopY + 25);
+
+        const puddleGrad = ctx.createRadialGradient(cw * 0.5, ch * 0.72, 15, cw * 0.5, ch * 0.72, cw * 0.36);
+        puddleGrad.addColorStop(0, '#1e3a5f');
+        puddleGrad.addColorStop(0.7, '#0f233d');
+        puddleGrad.addColorStop(1, '#070d17');
+        ctx.fillStyle = puddleGrad;
+        ctx.beginPath();
+        ctx.ellipse(cw * 0.5, ch * 0.72, cw * 0.36, ch * 0.14, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Stage 2~5: Pond, Lake, Misty River, Endless Ocean
+        const wGrad = ctx.createLinearGradient(0, waterTopY, 0, ch);
+        if (stage === 2) {
+          wGrad.addColorStop(0, '#0d3b5c');
+          wGrad.addColorStop(1, '#061a2e');
+        } else if (stage === 3) {
+          wGrad.addColorStop(0, '#155e75');
+          wGrad.addColorStop(1, '#082f49');
+        } else if (stage === 4) {
+          wGrad.addColorStop(0, '#0f4c5c');
+          wGrad.addColorStop(1, '#041b2d');
+        } else {
+          wGrad.addColorStop(0, '#0284c7');
+          wGrad.addColorStop(0.5, '#0369a1');
+          wGrad.addColorStop(1, '#082f49');
+        }
+        ctx.fillStyle = wGrad;
+        ctx.fillRect(0, waterTopY, cw, ch - waterTopY);
+      }
+
+      // Stage 2: Lily pads & lotus on pond
+      if (stage === 2) {
+        const pads = [
+          { x: cw * 0.28, y: ch * 0.68, r: 22 },
+          { x: cw * 0.68, y: ch * 0.74, r: 26 },
+          { x: cw * 0.48, y: ch * 0.80, r: 19 }
+        ];
+        pads.forEach((p, idx) => {
+          const sx = p.x + Math.sin(animTime + idx) * 4;
+          ctx.fillStyle = '#15803d';
+          ctx.beginPath();
+          ctx.ellipse(sx, p.y, p.r, p.r * 0.45, 0, 0.2, Math.PI * 1.9);
+          ctx.lineTo(sx, p.y);
+          ctx.closePath();
+          ctx.fill();
+          if (idx === 1) {
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(sx, p.y - 4, 7, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+
+      // Stage 3 & 5: Shimmering Moon/Starlight Glint (윤슬) & Waves
+      if (stage >= 3) {
+        const waveRows = stage === 5 ? 38 : 24;
+        for (let i = 0; i < waveRows; i++) {
+          const wy = waterTopY + 12 + (i / waveRows) * (ch - waterTopY - 25);
+          const spread = 50 + (i / waveRows) * (cw * 0.45);
+          const wx = cw * 0.5 + Math.sin(animTime * 2 + i * 1.7) * spread * 0.55;
+          const ww = 16 + Math.sin(animTime * 3 + i) * 10 + (stage === 5 ? 25 : 0);
+
+          ctx.strokeStyle = stage === 5 ? 'rgba(125, 211, 252, 0.45)' : 'rgba(224, 242, 254, 0.4)';
+          ctx.lineWidth = stage === 5 ? 2.5 : 1.8;
+          ctx.beginPath();
+          ctx.moveTo(wx - ww, wy);
+          ctx.lineTo(wx + ww, wy);
+          ctx.stroke();
+        }
+      }
+
+      // Stage 4: Rolling River Mist (안개 낀 대하)
+      if (stage === 4) {
+        for (let i = 0; i < 4; i++) {
+          const mx = ((animTime * 18 + i * 220) % (cw + 300)) - 150;
+          const my = waterTopY + 15 + i * 28;
+          const mGrad = ctx.createRadialGradient(mx, my, 10, mx, my, 140);
+          mGrad.addColorStop(0, 'rgba(207, 250, 254, 0.16)');
+          mGrad.addColorStop(1, 'rgba(207, 250, 254, 0)');
+          ctx.fillStyle = mGrad;
+          ctx.beginPath();
+          ctx.ellipse(mx, my, 150, 32, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Stage 5: Majestic Ocean Rolling Waves
+      if (stage === 5) {
+        for (let w = 0; w < 3; w++) {
+          const baseY = waterTopY + 25 + w * 48;
+          ctx.strokeStyle = `rgba(186, 230, 253, ${0.28 - w * 0.06})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          for (let x = 0; x <= cw; x += 20) {
+            const y = baseY + Math.sin(x * 0.015 + animTime * 2 + w) * 10;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      }
+
+      // Falling Raindrops & Ripples (Especially prominent in Stage 1 & 2)
+      if (stage <= 2 && Math.random() < (stage === 1 ? 0.45 : 0.2)) {
+        const rx = cw * 0.2 + Math.random() * (cw * 0.6);
+        const ry = waterTopY + 20 + Math.random() * (ch - waterTopY - 50);
+        ripples.push({ x: rx, y: ry, r: 1, maxR: 25 + Math.random() * 25, alpha: 0.75 });
+      } else if (stage >= 3 && Math.random() < 0.08) {
+        const rx = Math.random() * cw;
+        const ry = waterTopY + 20 + Math.random() * (ch - waterTopY - 40);
+        ripples.push({ x: rx, y: ry, r: 2, maxR: 40 + Math.random() * 30, alpha: 0.5 });
+      }
+
+      // Update & Draw Ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        rp.r += 0.65;
+        rp.alpha = Math.max(0, (1 - rp.r / rp.maxR) * 0.7);
+        ctx.strokeStyle = `rgba(186, 230, 253, ${rp.alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.38, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        if (rp.r >= rp.maxR) ripples.splice(i, 1);
+      }
+    }
+
+    // ==================== GRASS SCENE (풀멍 1~5단계) ====================
+    function drawGrassScene(stage) {
+      const groundY = ch * 0.78;
+
+      // Stage 5: Distant Sacred Mountain Range & World Tree Silhouette
+      if (stage >= 4) {
+        ctx.fillStyle = stage === 5 ? '#062c24' : '#092620';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(cw * 0.25, ch * 0.36);
+        ctx.lineTo(cw * 0.52, ch * 0.52);
+        ctx.lineTo(cw * 0.78, ch * 0.28);
+        ctx.lineTo(cw, groundY);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Ground / Hills
+      ctx.fillStyle = stage === 3 ? '#292014' : '#082419';
+      ctx.beginPath();
+      ctx.ellipse(cw * 0.5, groundY + 40, cw * 0.7, 95, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stage 1: Cozy Terracotta Pot with Sprout (집 앞 작은 화분)
+      if (stage === 1) {
+        const cx = cw * 0.5;
+        const potTop = groundY - 35;
+        ctx.fillStyle = '#b45309';
+        ctx.beginPath();
+        ctx.moveTo(cx - 42, potTop);
+        ctx.lineTo(cx + 42, potTop);
+        ctx.lineTo(cx + 30, groundY + 25);
+        ctx.lineTo(cx - 30, groundY + 25);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(cx - 46, potTop - 10, 92, 12);
+
+        // Cute central sprout
+        const sway = Math.sin(animTime * 2) * 8;
+        ctx.strokeStyle = '#4ade80';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, potTop - 10);
+        ctx.quadraticCurveTo(cx + sway * 0.5, potTop - 45, cx + sway, potTop - 75);
+        ctx.stroke();
+
+        // Two leaves
+        ctx.fillStyle = '#4ade80';
+        ctx.beginPath();
+        ctx.ellipse(cx + sway - 14, potTop - 72, 16, 8, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + sway + 14, potTop - 72, 16, 8, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw swaying grass / golden reeds
+      grassBlades.forEach(b => {
+        const sway = Math.sin(animTime * 2.2 + b.swayOffset) * (6 + stage * 3);
+        const baseY = stage === 1 ? groundY - 42 : groundY + 10;
+        ctx.strokeStyle = `hsl(${b.hue}, 65%, ${stage === 3 ? 58 : 42}%)`;
+        ctx.lineWidth = stage === 3 ? 2.2 : 2;
+        ctx.beginPath();
+        ctx.moveTo(b.x, baseY);
+        ctx.quadraticCurveTo(b.x + sway * 0.5, baseY - b.h * 0.5, b.x + sway, baseY - b.h);
+        ctx.stroke();
+
+        if (b.hasFlower) {
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(b.x + sway, baseY - b.h, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (stage === 3) {
+          // Golden reed plume
+          ctx.fillStyle = 'rgba(253, 230, 138, 0.8)';
+          ctx.beginPath();
+          ctx.ellipse(b.x + sway, baseY - b.h, 3, 9, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Ambient Fireflies / Nature Spores
+      if (Math.random() < 0.12 + stage * 0.05) {
+        particles.push({
+          x: Math.random() * cw,
+          y: groundY - Math.random() * 140,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -0.3 - Math.random() * 0.6,
+          size: 2 + Math.random() * 2.5,
+          alpha: 0.9,
+          color: stage === 5 ? '#5eead4' : '#bef264',
+          type: 'firefly'
+        });
+      }
+    }
+
+    function updateAndDrawExtraParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.014;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /*************************************************************************
+     * 9. INITIALIZATION ON WINDOW LOAD
+     *************************************************************************/
+    window.onload = function () {
+      loadState();
+      resizeCanvas();
+      updateAllUI();
+      renderCanvasLoop();
+    };
+  </script>
+</body>
+</html>
